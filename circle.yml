@@ -6,7 +6,8 @@ dependencies:
   override:
     - docker info
     - docker pull insighttoolkit/cuberille-test
-    - ~/ITKCuberille/test/Docker/build.sh
+    - ~/ITKCuberille/test/Docker/build.sh:
+        timeout: 3000
 
 test:
   override:

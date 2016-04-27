@@ -3,12 +3,10 @@
 # This is a script to build the modules and run the test suite in the base
 # Docker container.
 
-die() {
-  echo "Error: $@" 1>&2
-  exit 1;
-}
+set -x
+set -e
 
-cd /usr/src/ITKCuberille-build || die "Could not cd into the build directory"
+cd /usr/src/ITKCuberille-build
 
 cmake \
   -G Ninja \
@@ -16,5 +14,6 @@ cmake \
   -DITK_USE_SYSTEM_SWIG:BOOL=ON \
   -DSWIG_EXECUTABLE:FILEPATH=/usr/bin/swig3.0 \
   -DCMAKE_BUILD_TYPE:STRING=Release \
-    /usr/src/ITKCuberille || die "CMake configuration failed"
-ctest -VV -D Experimental || die "ctest failed"
+  -DBUILDNAME:STRING=External-Cuberille \
+    /usr/src/ITKCuberille
+ctest -VV -D Experimental

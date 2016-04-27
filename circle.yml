@@ -9,6 +9,5 @@ dependencies:
 
 test:
   override:
-    - mkdir ~/ITKMinimialPathExtraction-build
-    - docker run -v ~/ITKCuberille:/usr/src/ITKCuberille -v ~/ITKCuberille-build:/usr/src/ITKCuberille-build insighttoolkit/cuberille-test /usr/src/ITKCuberille/test/Docker/test.sh
+    - ~/ITKCuberille/test/Docker/run.sh
 

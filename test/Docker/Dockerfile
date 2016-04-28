@@ -32,6 +32,7 @@ RUN git clone git://itk.org/ITK.git && \
   cd ITK-build && \
   cmake \
     -G Ninja \
+    -DCMAKE_BUILD_TYPE:STRING=MinSizeRel \
     -DCMAKE_INSTALL_PREFIX:PATH=/usr \
     -DBUILD_EXAMPLES:BOOL=OFF \
     -DBUILD_TESTING:BOOL=OFF \

@@ -53,6 +53,6 @@ RUN git clone git://itk.org/ITK.git && \
     -DModule_ITKThresholding:BOOL=ON \
     -DModule_ITKIOImageBase:BOOL=ON \
     ../ITK && \
-  ninja && \
+  ninja -j5 && \
   find . -name '*.o' -delete
 

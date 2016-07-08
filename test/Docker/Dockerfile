@@ -22,8 +22,8 @@ RUN apt-get update && apt-get install -y \
 RUN mkdir -p /usr/src/ITKCuberille-build
 WORKDIR /usr/src
 
-# 2015-10-19
-ENV ITK_GIT_TAG bec8c1f596a4da63104a14e1040ef4f6f967390f
+# 2016-04-27
+ENV ITK_GIT_TAG 0bbd4b573079b5c572481d62e81f17a352d12df0
 RUN git clone git://itk.org/ITK.git && \
   cd ITK && \
   git checkout ${ITK_GIT_TAG} && \
@@ -32,6 +32,7 @@ RUN git clone git://itk.org/ITK.git && \
   cd ITK-build && \
   cmake \
     -G Ninja \
+    -DCMAKE_BUILD_TYPE:STRING=MinSizeRel \
     -DCMAKE_INSTALL_PREFIX:PATH=/usr \
     -DBUILD_EXAMPLES:BOOL=OFF \
     -DBUILD_TESTING:BOOL=OFF \
@@ -52,6 +53,6 @@ RUN git clone git://itk.org/ITK.git && \
     -DModule_ITKThresholding:BOOL=ON \
     -DModule_ITKIOImageBase:BOOL=ON \
     ../ITK && \
-  ninja && \
+  ninja -j5 && \
   find . -name '*.o' -delete
 

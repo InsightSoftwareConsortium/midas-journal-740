@@ -1,0 +1,7 @@
+.pixi/
+emscripten-build/
+native/
+node_modules/
+python/
+typescript/
+wasi-build/

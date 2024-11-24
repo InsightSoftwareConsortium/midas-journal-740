@@ -16,6 +16,9 @@
  *
  *=========================================================================*/
 
+#include "itkMesh.h"
+
+#include "itkMeshJSON.h"
 #include "itkPipeline.h"
 #include "itkInputImage.h"
 #include "itkOutputMesh.h"

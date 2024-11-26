@@ -29,13 +29,12 @@
 #include "itkBSplineInterpolateImageFunction.h"
 #include "itkWindowedSincInterpolateImageFunction.h"
 
-template <typename TImage>
-int cuberille(itk::wasm::Pipeline &pipeline, const TImage * image)
+template <typename TImage, typename TMesh, typename TInterpolator>
+int cuberilleWithInterpolator(itk::wasm::Pipeline & pipeline, const TImage * image)
 {
   using ImageType = TImage;
-  constexpr unsigned int Dimension = ImageType::ImageDimension;
-  using PixelType = typename ImageType::PixelType;
-  using MeshType = itk::Mesh<PixelType, Dimension>;
+  using MeshType = TMesh;
+  using InterpolatorType = TInterpolator;
 
   pipeline.get_option("image")->required()->type_name("INPUT_IMAGE");
 
@@ -68,10 +67,14 @@ int cuberille(itk::wasm::Pipeline &pipeline, const TImage * image)
 
   ITK_WASM_PARSE(pipeline);
 
-  using InterpolatorType = itk::LinearInterpolateImageFunction<ImageType>;
-  using CuberilleType = itk::CuberilleImageToMeshFilter<ImageType, MeshType, InterpolatorType>;
+  using InterpolatorBaseType = itk::InterpolateImageFunction<ImageType>;
+  using CuberilleType = itk::CuberilleImageToMeshFilter<ImageType, MeshType, InterpolatorBaseType>;
 
   const auto cuberille = CuberilleType::New();
+
+  const auto interpolator = InterpolatorType::New();
+  interpolator->SetInputImage(image);
+  cuberille->SetInterpolator(interpolator);
 
   cuberille->SetInput(image);
   cuberille->SetIsoSurfaceValue(isoSurfaceValue);
@@ -92,6 +95,44 @@ int cuberille(itk::wasm::Pipeline &pipeline, const TImage * image)
   mesh.Set(outputMesh);
 
   return EXIT_SUCCESS;
+}
+
+template <typename TImage>
+int cuberille(itk::wasm::Pipeline &pipeline, const TImage * image)
+{
+  using ImageType = TImage;
+  constexpr unsigned int Dimension = ImageType::ImageDimension;
+  using PixelType = typename ImageType::PixelType;
+  using MeshType = itk::Mesh<PixelType, Dimension>;
+
+  std::string interpolationMethod = "linear";
+  pipeline.add_option("--interpolator", interpolationMethod, "Interpolation method to use for the image.")->check(CLI::IsMember({"linear", "bspline", "windowed-sinc"}));
+
+  ITK_WASM_PRE_PARSE(pipeline);
+
+  if (interpolationMethod == "linear")
+  {
+    using InterpolatorType = itk::LinearInterpolateImageFunction<ImageType>;
+    return cuberilleWithInterpolator<ImageType, MeshType, InterpolatorType>(pipeline, image);
+  }
+  else if (interpolationMethod == "bspline")
+  {
+    using InterpolatorType = itk::BSplineInterpolateImageFunction<ImageType>;
+    return cuberilleWithInterpolator<ImageType, MeshType, InterpolatorType>(pipeline, image);
+  }
+  else if (interpolationMethod == "windowed-sinc")
+  {
+    constexpr unsigned int VRadius = 3;
+    using InterpolatorType = itk::WindowedSincInterpolateImageFunction<ImageType, VRadius>;
+    return cuberilleWithInterpolator<ImageType, MeshType, InterpolatorType>(pipeline, image);
+  }
+  else
+  {
+    std::ostringstream ostrm;
+    ostrm << "Unknown interpolation method: " << interpolationMethod;
+    CLI::Error err("Runtime error", ostrm.str(), 1);
+    return pipeline.exit(err);
+  }
 }
 
 template <typename TImage>
@@ -117,7 +158,6 @@ int main(int argc, char * argv[])
   itk::wasm::Pipeline pipeline("cuberille", "Create a mesh from an image via cuberille implicit surface polygonization.", argc, argv);
 
   return itk::wasm::SupportInputImageTypes<PipelineFunctor,
-    // uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, float, double>
-    uint8_t>
+    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, float, double>
     ::Dimensions<2U, 3U>("image", pipeline);
 }

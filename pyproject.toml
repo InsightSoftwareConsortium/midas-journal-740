@@ -382,6 +382,7 @@ description = "Build ITK-Wasm"
 cmd = '''cmake -B$ITK_WASM_NATIVE_WORKSPACE/itkwasm-cuberille-build -S. -GNinja
   -DITK_DIR:PATH=$ITK_WASM_ITK_BUILD_DIR
   -DBUILD_TESTING:BOOL=ON
+  -DBUILD_ITK_WASM_PIPELINES:BOOL=ON
   -DCMAKE_CXX_STANDARD:STRING=20
   -DCMAKE_BUILD_TYPE:STRING=Debug'''
 depends-on = ["build-itk-wasm"]

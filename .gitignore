@@ -5,3 +5,6 @@ node_modules/
 python/
 typescript/
 wasi-build/
+pyodide/
+test/data.tar.gz
+test/data/

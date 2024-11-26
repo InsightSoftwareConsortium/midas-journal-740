@@ -24,46 +24,72 @@
 #include "itkOutputMesh.h"
 #include "itkSupportInputImageTypes.h"
 
+#include "itkCuberilleImageToMeshFilter.h"
+#include "itkLinearInterpolateImageFunction.h"
+#include "itkBSplineInterpolateImageFunction.h"
+#include "itkWindowedSincInterpolateImageFunction.h"
+
 template <typename TImage>
 int cuberille(itk::wasm::Pipeline &pipeline, const TImage * image)
 {
   using ImageType = TImage;
   constexpr unsigned int Dimension = ImageType::ImageDimension;
-  using PixelType = typename ImageType::PixelType;  using MeshType = itk::Mesh<PixelType, Dimension>;
-
+  using PixelType = typename ImageType::PixelType;
+  using MeshType = itk::Mesh<PixelType, Dimension>;
 
   pipeline.get_option("image")->required()->type_name("INPUT_IMAGE");
+
+  double isoSurfaceValue = 1.0;
+  pipeline.add_flag("--iso-surface-value", isoSurfaceValue, "Value of the iso-surface for which to generate the mesh. Pixels equal to or greater than this value are considered to lie on the surface or inside the resultant mesh.");
 
   bool quadrilateralFaces = false;
   pipeline.add_flag("--quadrilateral-faces", quadrilateralFaces, "Generate quadrilateral faces instead of triangle faces.");
 
   bool verticesNotProjectedToIsoSurface = false;
-  pipeline.add_flag("--vertices-not-projected-to-iso-surface", verticesNotProjectedToIsoSurface, "Do not project the vertices to the iso-surface.");
+  pipeline.add_flag("--no-projection", verticesNotProjectedToIsoSurface, "Do not project the vertices to the iso-surface.");
 
   bool imagePixelToCellData = false;
   pipeline.add_flag("--image-pixel-to-cell-data", imagePixelToCellData, "Whether the adjacent input pixel value should be saved as cell data in the output mesh.");
 
-  double projectVertexSurfaceDistanceThreshold = 0.5;
-  pipeline.add_option("--project-vertex-surface-distance-threshold", projectVertexSurfaceDistanceThreshold, "Threshold for the distance from the iso-surface during vertex projection in pixel units. Smaller is smoother but takes longer.");
+  double projectVertexSurfaceDistanceThreshold = 0.2;
+  pipeline.add_option("--surface-distance-threshold", projectVertexSurfaceDistanceThreshold, "Threshold for the distance from the iso-surface during vertex projection in pixel units. Smaller is smoother but takes longer.");
 
   double projectVertexStepLength = -1.0;
-  pipeline.add_option("--project-vertex-step-length", projectVertexStepLength, "Initial step length for vertex projection in physical units. Default is max spacing * 0.25.");
+  pipeline.add_option("--step-length", projectVertexStepLength, "Initial step length for vertex projection in physical units. Default is max spacing * 0.25.");
 
   double projectVertexStepLengthRelaxationFactor = 0.95;
-  pipeline.add_option("--project-vertex-step-length-relaxation-factor", projectVertexStepLengthRelaxationFactor, "The step length relaxation factor during vertex projection. The step length is multiplied by this factor each iteration to allow convergence, [0.0, 1.0].");
+  pipeline.add_option("--step-relaxation-factor", projectVertexStepLengthRelaxationFactor, "The step length relaxation factor during vertex projection. The step length is multiplied by this factor each iteration to allow convergence, [0.0, 1.0].")->check(CLI::Range(0.0, 1.0));
 
   uint32_t projectVertexMaximumNumberOfSteps = 50;
-  pipeline.add_option("--project-vertex-maximum-number-of-steps", projectVertexMaximumNumberOfSteps, "The maximum number of steps used during vertex projection.");
-
-  bool generateQuadrilateralFaces = false;
-  pipeline.add_flag("--generate-quadrilateral-faces", generateQuadrilateralFaces, "Generate quadrilateral faces instead of triangle faces.");
+  pipeline.add_option("--max-steps", projectVertexMaximumNumberOfSteps, "The maximum number of steps used during vertex projection.");
 
   itk::wasm::OutputMesh<MeshType> mesh;
   pipeline.add_option("mesh", mesh, "Output mesh.")->required()->type_name("OUTPUT_MESH");
 
   ITK_WASM_PARSE(pipeline);
 
-  // Pipeline code goes here
+  using InterpolatorType = itk::LinearInterpolateImageFunction<ImageType>;
+  using CuberilleType = itk::CuberilleImageToMeshFilter<ImageType, MeshType, InterpolatorType>;
+
+  const auto cuberille = CuberilleType::New();
+
+  cuberille->SetInput(image);
+  cuberille->SetIsoSurfaceValue(isoSurfaceValue);
+  cuberille->SetGenerateTriangleFaces(!quadrilateralFaces);
+  cuberille->SetProjectVerticesToIsoSurface(!verticesNotProjectedToIsoSurface);
+  cuberille->SetSavePixelAsCellData(imagePixelToCellData);
+  cuberille->SetProjectVertexSurfaceDistanceThreshold(projectVertexSurfaceDistanceThreshold);
+  if (projectVertexStepLength > 0.0)
+  {
+    cuberille->SetProjectVertexStepLength(projectVertexStepLength);
+  }
+  cuberille->SetProjectVertexStepLengthRelaxationFactor(projectVertexStepLengthRelaxationFactor);
+  cuberille->SetProjectVertexMaximumNumberOfSteps(projectVertexMaximumNumberOfSteps);
+
+  ITK_WASM_CATCH_EXCEPTION(pipeline, cuberille->Update());
+
+  const typename MeshType::ConstPointer outputMesh = cuberille->GetOutput();
+  mesh.Set(outputMesh);
 
   return EXIT_SUCCESS;
 }
@@ -91,6 +117,7 @@ int main(int argc, char * argv[])
   itk::wasm::Pipeline pipeline("cuberille", "Create a mesh from an image via cuberille implicit surface polygonization.", argc, argv);
 
   return itk::wasm::SupportInputImageTypes<PipelineFunctor,
-    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, float, double>
+    // uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, float, double>
+    uint8_t>
     ::Dimensions<2U, 3U>("image", pipeline);
 }

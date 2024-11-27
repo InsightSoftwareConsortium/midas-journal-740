@@ -20,4 +20,5 @@ enable_testing()
 
 # Begin create-itk-wasm added pipelines.
 add_subdirectory(cuberille)
+add_subdirectory(anti-alias-cuberille)
 # End create-itk-wasm added pipelines.

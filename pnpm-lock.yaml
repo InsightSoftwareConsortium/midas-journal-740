@@ -12,8 +12,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       itk-wasm:
-        specifier: 1.0.0-b.182
-        version: 1.0.0-b.182
+        specifier: 1.0.0-b.183
+        version: 1.0.0-b.183
 
 packages:
 
@@ -326,8 +326,8 @@ packages:
   it-stream-types@2.0.2:
     resolution: {integrity: sha512-Rz/DEZ6Byn/r9+/SBCuJhpPATDF9D+dz5pbgSUyBsCDtza6wtNATrz/jz1gDyNanC3XdLboriHnOC925bZRBww==}
 
-  itk-wasm@1.0.0-b.182:
-    resolution: {integrity: sha512-OIbrbXosSM3ks4iJv0AApWu3SDZab8vpbzG8pyLtzKw8VouYLoQ2r2HnmLo4+mUWZ4UOSJuqflZnsVnOXw50mw==}
+  itk-wasm@1.0.0-b.183:
+    resolution: {integrity: sha512-B3/W8MqKZ3KOl+96W1CvgAJjOmlqsac7iaEooP98k3yzH04oAsuyh3xZooOxDVNCucEdIj2Zt7lALbdFv+BoPQ==}
     hasBin: true
 
   js-sha3@0.8.0:
@@ -895,7 +895,7 @@ snapshots:
 
   it-stream-types@2.0.2: {}
 
-  itk-wasm@1.0.0-b.182:
+  itk-wasm@1.0.0-b.183:
     dependencies:
       '@itk-wasm/dam': 1.1.1
       '@thewtex/zstddec': 0.2.1

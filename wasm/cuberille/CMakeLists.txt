@@ -15,7 +15,7 @@ add_test(NAME cuberille-convergence-options
     --surface-distance-threshold 0.2
     --step-length 0.24
     --step-relaxation-factor 0.95
-    --max-steps 100)
+    --maximum-steps 100)
 
 add_test(NAME cuberille-no-projection
   COMMAND cuberille
@@ -24,7 +24,7 @@ add_test(NAME cuberille-no-projection
     --surface-distance-threshold 0.2
     --step-length 0.24
     --step-relaxation-factor 0.95
-    --max-steps 100
+    --maximum-steps 100
     --no-projection)
 
 add_test(NAME cuberille-quadrilateral-faces
@@ -34,7 +34,7 @@ add_test(NAME cuberille-quadrilateral-faces
     --surface-distance-threshold 0.2
     --step-length 0.24
     --step-relaxation-factor 0.95
-    --max-steps 100
+    --maximum-steps 100
     --quadrilateral-faces)
 
 add_test(NAME cuberille-bspline
@@ -44,7 +44,7 @@ add_test(NAME cuberille-bspline
     --surface-distance-threshold 0.2
     --step-length 0.24
     --step-relaxation-factor 0.95
-    --max-steps 100
+    --maximum-steps 100
     --interpolator bspline)
 
 add_test(NAME cuberille-windowed-sinc
@@ -54,5 +54,5 @@ add_test(NAME cuberille-windowed-sinc
     --surface-distance-threshold 0.2
     --step-length 0.24
     --step-relaxation-factor 0.95
-    --max-steps 100
+    --maximum-steps 100
     --interpolator windowed-sinc)

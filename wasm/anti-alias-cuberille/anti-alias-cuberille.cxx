@@ -28,6 +28,11 @@
 #include "itkLinearInterpolateImageFunction.h"
 #include "itkBSplineInterpolateImageFunction.h"
 #include "itkWindowedSincInterpolateImageFunction.h"
+#include "itkAntiAliasBinaryImageFilter.h"
+#include "itkSmoothingRecursiveGaussianImageFilter.h"
+#include "itkBinaryFillholeImageFilter.h"
+#include "itkGrayscaleMorphologicalClosingImageFilter.h"
+#include "itkFlatStructuringElement.h"
 
 template <typename TImage, typename TMesh, typename TInterpolator>
 int cuberilleWithInterpolator(itk::wasm::Pipeline & pipeline, const TImage * image)
@@ -38,17 +43,26 @@ int cuberilleWithInterpolator(itk::wasm::Pipeline & pipeline, const TImage * ima
 
   pipeline.get_option("image")->required()->type_name("INPUT_IMAGE");
 
-  double isoSurfaceValue = 1.0;
-  pipeline.add_flag("--iso-surface-value", isoSurfaceValue, "Value of the iso-surface for which to generate the mesh. Pixels equal to or greater than this value are considered to lie on the surface or inside the resultant mesh.");
+  double maximumRMSError = 0.07;
+  pipeline.add_flag("--maximum-rms-error", maximumRMSError, "Maximum root mean square error for the anti-aliasing filter. Smaller is smoother but takes longer.");
+
+  uint32_t numberOfIterations = 1000;
+  pipeline.add_flag("--iterations", numberOfIterations, "Number of iterations for the anti-aliasing filter. Larger is smoother but takes longer.");
+
+  double smoothingSigma = 0.95;
+  pipeline.add_option("--smoothing-sigma", smoothingSigma, "Sigma for the Gaussian smoothing filter in pixel units.");
+
+  bool noFillHoles = false;
+  pipeline.add_flag("--no-fill-holes", noFillHoles, "Do not fill holes in the binary image before anti-aliasing.");
+
+  bool noClosing = false;
+  pipeline.add_flag("--no-closing", noClosing, "Do not close the smoothed, anti-aliased image before mesh generation.");
+
+  double isoSurfaceValue = 0.0;
+  pipeline.add_flag("--iso-surface-value", isoSurfaceValue, "Value of the iso-surface on the normalized, anti-aliased image for which to generate the mesh. Pixels equal to or greater than this value are considered to lie on the surface or inside the resultant mesh. [-4.0, 4.0]");
 
   bool quadrilateralFaces = false;
   pipeline.add_flag("--quadrilateral-faces", quadrilateralFaces, "Generate quadrilateral faces instead of triangle faces.");
-
-  bool verticesNotProjectedToIsoSurface = false;
-  pipeline.add_flag("--no-projection", verticesNotProjectedToIsoSurface, "Do not project the vertices to the iso-surface.");
-
-  bool imagePixelToCellData = false;
-  pipeline.add_flag("--image-pixel-to-cell-data", imagePixelToCellData, "Whether the adjacent input pixel value should be saved as cell data in the output mesh.");
 
   double projectVertexSurfaceDistanceThreshold = 0.01;
   pipeline.add_option("--surface-distance-threshold", projectVertexSurfaceDistanceThreshold, "Threshold for the distance from the iso-surface during vertex projection in pixel units. Smaller is smoother but takes longer.");
@@ -67,20 +81,64 @@ int cuberilleWithInterpolator(itk::wasm::Pipeline & pipeline, const TImage * ima
 
   ITK_WASM_PARSE(pipeline);
 
-  using InterpolatorBaseType = itk::InterpolateImageFunction<ImageType>;
-  using CuberilleType = itk::CuberilleImageToMeshFilter<ImageType, MeshType, InterpolatorBaseType>;
+  using FillholeFilterType = itk::BinaryFillholeImageFilter<ImageType>;
+  const auto fillholeFilter = FillholeFilterType::New();
+  fillholeFilter->SetInput(image);
+
+  using FloatImageType = itk::Image<float, ImageType::ImageDimension>;
+  using AntiAliasFilterType = itk::AntiAliasBinaryImageFilter<ImageType, FloatImageType>;
+  const auto antiAliasFilter = AntiAliasFilterType::New();
+  if (noFillHoles)
+  {
+    antiAliasFilter->SetInput(image);
+  }
+  else
+  {
+    antiAliasFilter->SetInput(fillholeFilter->GetOutput());
+  }
+  antiAliasFilter->SetMaximumRMSError(maximumRMSError);
+  antiAliasFilter->SetNumberOfIterations(numberOfIterations);
+
+  using SmoothingFilterType = itk::SmoothingRecursiveGaussianImageFilter<FloatImageType, FloatImageType>;
+  const auto smoothingFilter = SmoothingFilterType::New();
+  smoothingFilter->SetInput(antiAliasFilter->GetOutput());
+  typename SmoothingFilterType::SigmaArrayType sigma;
+  for (unsigned int i = 0; i < ImageType::ImageDimension; ++i)
+  {
+    sigma[i] = image->GetSpacing()[i] * smoothingSigma;
+  }
+  smoothingFilter->SetSigmaArray(sigma);
+
+  using StructuringElementType = itk::FlatStructuringElement<ImageType::ImageDimension>;
+  using ClosingFilterType = itk::GrayscaleMorphologicalClosingImageFilter<FloatImageType, FloatImageType, StructuringElementType>;
+  const auto closingFilter = ClosingFilterType::New();
+  closingFilter->SetInput(smoothingFilter->GetOutput());
+  typename StructuringElementType::RadiusType closingRadius;
+  closingRadius.Fill(1);
+  const auto closingStructuringElement = StructuringElementType::Ball(closingRadius, false);
+  closingFilter->SetKernel(closingStructuringElement);
+
+  using InterpolatorBaseType = itk::InterpolateImageFunction<FloatImageType>;
+  using CuberilleType = itk::CuberilleImageToMeshFilter<FloatImageType, MeshType, InterpolatorBaseType>;
 
   const auto cuberille = CuberilleType::New();
 
   const auto interpolator = InterpolatorType::New();
-  interpolator->SetInputImage(image);
   cuberille->SetInterpolator(interpolator);
 
-  cuberille->SetInput(image);
+  if (noClosing)
+  {
+    interpolator->SetInputImage(smoothingFilter->GetOutput());
+    cuberille->SetInput(smoothingFilter->GetOutput());
+  }
+  else
+  {
+    interpolator->SetInputImage(closingFilter->GetOutput());
+    interpolator->SetInputImage(closingFilter->GetOutput());
+  }
+  cuberille->SetInput(closingFilter->GetOutput());
   cuberille->SetIsoSurfaceValue(isoSurfaceValue);
   cuberille->SetGenerateTriangleFaces(!quadrilateralFaces);
-  cuberille->SetProjectVerticesToIsoSurface(!verticesNotProjectedToIsoSurface);
-  cuberille->SetSavePixelAsCellData(imagePixelToCellData);
   cuberille->SetProjectVertexSurfaceDistanceThreshold(projectVertexSurfaceDistanceThreshold);
   if (projectVertexStepLength > 0.0)
   {
@@ -109,6 +167,8 @@ int cuberille(itk::wasm::Pipeline &pipeline, const TImage * image)
   using PixelType = typename ImageType::PixelType;
   using MeshType = itk::Mesh<PixelType, Dimension>;
 
+  using FloatImageType = itk::Image<float, ImageType::ImageDimension>;
+
   std::string interpolationMethod = "linear";
   pipeline.add_option("--interpolator", interpolationMethod, "Interpolation method to use for the image. Valid values: linear, bspline, windowed-sync.")->check(CLI::IsMember({"linear", "bspline", "windowed-sinc"}));
 
@@ -116,18 +176,18 @@ int cuberille(itk::wasm::Pipeline &pipeline, const TImage * image)
 
   if (interpolationMethod == "linear")
   {
-    using InterpolatorType = itk::LinearInterpolateImageFunction<ImageType>;
+    using InterpolatorType = itk::LinearInterpolateImageFunction<FloatImageType>;
     return cuberilleWithInterpolator<ImageType, MeshType, InterpolatorType>(pipeline, image);
   }
   else if (interpolationMethod == "bspline")
   {
-    using InterpolatorType = itk::BSplineInterpolateImageFunction<ImageType>;
+    using InterpolatorType = itk::BSplineInterpolateImageFunction<FloatImageType>;
     return cuberilleWithInterpolator<ImageType, MeshType, InterpolatorType>(pipeline, image);
   }
   else if (interpolationMethod == "windowed-sinc")
   {
     constexpr unsigned int VRadius = 3;
-    using InterpolatorType = itk::WindowedSincInterpolateImageFunction<ImageType, VRadius>;
+    using InterpolatorType = itk::WindowedSincInterpolateImageFunction<FloatImageType, VRadius>;
     return cuberilleWithInterpolator<ImageType, MeshType, InterpolatorType>(pipeline, image);
   }
   else
@@ -159,9 +219,9 @@ public:
 
 int main(int argc, char * argv[])
 {
-  itk::wasm::Pipeline pipeline("cuberille", "Create a mesh from an image via cuberille implicit surface polygonization.", argc, argv);
+  itk::wasm::Pipeline pipeline("cuberille", "Anti-alias a label image and create a mesh via cuberille implicit surface polygonization.", argc, argv);
 
   return itk::wasm::SupportInputImageTypes<PipelineFunctor,
-    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, float, double>
+    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t>
     ::Dimensions<2U, 3U>("image", pipeline);
 }

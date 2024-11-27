@@ -10,7 +10,7 @@
       "https://github.com/InsightSoftwareConsortium/ITK-Wasm/releases/download/itk-wasm-v1.0.0-b.179/sample-data.tar.gz",
       "https://bafybeidxatrsrrphfmntdyze6ec3jbiak527wj3kalwjptv4bimpcnzxdq.ipfs.w3s.link/ipfs/bafybeidxatrsrrphfmntdyze6ec3jbiak527wj3kalwjptv4bimpcnzxdq/sample-data.tar.gz"
     ],
-    "package-description": "Cuberille implicit surface polygonization",
+    "package-description": "Cuberille implicit surface polygonization to generate meshes from images.",
     "typescript-package-name": "@itk-wasm/cuberille",
     "python-package-name": "itkwasm-cuberille",
     "repository": "https://github.com/InsightSoftwareConsortium/ITKCuberille"

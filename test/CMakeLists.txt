@@ -316,6 +316,32 @@ add_test(
     100   # Maximum number of steps
 )
 
+add_test(
+  NAME Cuberille_tibial_cartilage_cropped_0.1
+  COMMAND CuberilleTestDriver CuberilleTest01
+    ${DATA_DIR}/tibial_cartilage_cropped.nrrd
+    ${ITK_TEST_OUTPUT_DIR}/tibial_cartilage_cropped.vtk
+    0.1    # Iso-surface value
+    526   # Expected number of points
+    938   # Expected number of cells
+    1     # Generate triangle faces
+    1     # Project vertices to iso-surface
+    0.05  # Surface distance threshold
+)
+
+add_test(
+  NAME Cuberille_tibial_cartilage_cropped_0.5
+  COMMAND CuberilleTestDriver CuberilleTest01
+    ${DATA_DIR}/tibial_cartilage_cropped.nrrd
+    ${ITK_TEST_OUTPUT_DIR}/tibial_cartilage_cropped.vtk
+    0.5    # Iso-surface value
+    0     # Expected number of points
+    0     # Expected number of cells
+    1     # Generate triangle faces
+    1     # Project vertices to iso-surface
+    0.05  # Surface distance threshold
+)
+
 #add_test(
 #  Cuberille_Engine_01
 #  CuberilleTest01
@@ -350,6 +376,19 @@ add_test(
 #  0.85    # Step length relaxation factor
 #  25      # Maximum number of steps
 #)
+
+add_test(
+  NAME TC_prob_float_9021791_96M_right_cropped
+  COMMAND CuberilleTestDriver CuberilleTest01
+    ${DATA_DIR}/TC_prob_float_9021791_96M_right_cropped.nrrd
+    ${ITK_TEST_OUTPUT_DIR}/TC_prob_float_9021791_96M_right_cropped.vtk
+    0.5   # Iso-surface value
+    132   # Expected number of points
+    222   # Expected number of cells
+    1     # Generate triangle faces
+    1     # Project vertices to iso-surface
+    0.05  # Surface distance threshold
+)
 
 itk_add_test(NAME CuberilleTestDirectionMatrix
   COMMAND ${itk-module}TestDriver CuberilleTest02 )

@@ -1,14 +1,5 @@
 add_executable(anti-alias-cuberille anti-alias-cuberille.cxx)
 
-set(io_components)
-if (NOT WASI AND NOT EMSCRIPTEN)
-  set(io_components
-    ITKIONIFTI
-    ITKIOMeshVTK
-    ITKIOMeshOFF
-    )
-endif()
-
 find_package(ITK REQUIRED COMPONENTS
   WebAssemblyInterface
   ITKAntiAlias

@@ -39,7 +39,7 @@ int cuberilleWithInterpolator(itk::wasm::Pipeline & pipeline, const TImage * ima
   pipeline.get_option("image")->required()->type_name("INPUT_IMAGE");
 
   double isoSurfaceValue = 1.0;
-  pipeline.add_flag("--iso-surface-value", isoSurfaceValue, "Value of the iso-surface for which to generate the mesh. Pixels equal to or greater than this value are considered to lie on the surface or inside the resultant mesh.");
+  pipeline.add_option("--iso-surface-value", isoSurfaceValue, "Value of the iso-surface for which to generate the mesh. Pixels equal to or greater than this value are considered to lie on the surface or inside the resultant mesh.");
 
   bool quadrilateralFaces = false;
   pipeline.add_flag("--quadrilateral-faces", quadrilateralFaces, "Generate quadrilateral faces instead of triangle faces.");
@@ -51,7 +51,7 @@ int cuberilleWithInterpolator(itk::wasm::Pipeline & pipeline, const TImage * ima
   pipeline.add_flag("--image-pixel-to-cell-data", imagePixelToCellData, "Whether the adjacent input pixel value should be saved as cell data in the output mesh.");
 
   double projectVertexSurfaceDistanceThreshold = 0.01;
-  pipeline.add_option("--surface-distance-threshold", projectVertexSurfaceDistanceThreshold, "Threshold for the distance from the iso-surface during vertex projection in pixel units. Smaller is smoother but takes longer.");
+  pipeline.add_option("--surface-distance-threshold", projectVertexSurfaceDistanceThreshold, "Threshold for the distance from the rface during vertex projection in pixel units. Smaller is smoother but takes longer.");
 
   double projectVertexStepLength = -1.0;
   pipeline.add_option("--step-length", projectVertexStepLength, "Initial step length for vertex projection in physical units. Default is max spacing * 0.35.");

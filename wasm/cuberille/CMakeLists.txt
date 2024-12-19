@@ -56,3 +56,10 @@ add_test(NAME cuberille-windowed-sinc
     --step-relaxation-factor 0.95
     --maximum-steps 100
     --interpolator windowed-sinc)
+
+add_test(NAME cuberille-brain
+  COMMAND cuberille
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../test/Input/tinyT1.nii.gz
+    ${CMAKE_CURRENT_BINARY_DIR}/cuberille-brain.off
+    --iso-surface-value 147.5
+)

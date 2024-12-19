@@ -4,7 +4,9 @@ set(io_components)
 if (NOT WASI AND NOT EMSCRIPTEN)
   set(io_components
     ITKIONIFTI
-    ITKIOMeshVTK)
+    ITKIOMeshVTK
+    ITKIOMeshOFF
+    )
 endif()
 
 find_package(ITK REQUIRED COMPONENTS
@@ -23,7 +25,8 @@ add_test(NAME anti-alias-cuberille-help COMMAND anti-alias-cuberille --help)
 add_test(NAME anti-alias-cuberille-defaults
   COMMAND anti-alias-cuberille
     ${CMAKE_CURRENT_SOURCE_DIR}/../../test/Input/brain-seg.nii.gz
-    ${CMAKE_CURRENT_BINARY_DIR}/anti-alias-cuberille-defaults.vtk)
+    ${CMAKE_CURRENT_BINARY_DIR}/anti-alias-cuberille-defaults.off
+    --no-closing)
 
 add_test(NAME anti-alias-cuberille-convergence-options
   COMMAND anti-alias-cuberille
@@ -36,8 +39,9 @@ add_test(NAME anti-alias-cuberille-convergence-options
 add_test(NAME anti-alias-cuberille-quadrilateral-faces
   COMMAND anti-alias-cuberille
     ${CMAKE_CURRENT_SOURCE_DIR}/../../test/Input/brain-seg.nii.gz
-    ${CMAKE_CURRENT_BINARY_DIR}/anti-alias-cuberille-quadrilateral-faces.vtk
+    ${CMAKE_CURRENT_BINARY_DIR}/anti-alias-cuberille-quadrilateral-faces.off
     --quadrilateral-faces
+    --no-closing
     --surface-distance-threshold 0.5
     --maximum-steps 150
     --step-relaxation-factor 0.75

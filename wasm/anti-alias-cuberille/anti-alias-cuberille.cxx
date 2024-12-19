@@ -134,9 +134,8 @@ int cuberilleWithInterpolator(itk::wasm::Pipeline & pipeline, const TImage * ima
   else
   {
     interpolator->SetInputImage(closingFilter->GetOutput());
-    interpolator->SetInputImage(closingFilter->GetOutput());
+    cuberille->SetInput(closingFilter->GetOutput());
   }
-  cuberille->SetInput(closingFilter->GetOutput());
   cuberille->SetIsoSurfaceValue(isoSurfaceValue);
   cuberille->SetGenerateTriangleFaces(!quadrilateralFaces);
   cuberille->SetProjectVertexSurfaceDistanceThreshold(projectVertexSurfaceDistanceThreshold);

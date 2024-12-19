@@ -1,6 +1,6 @@
 {
   "name": "@itk-wasm/cuberille",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Cuberille implicit surface polygonization to generate meshes from images.",
   "type": "module",
   "module": "./dist/index.js",

@@ -1,0 +1,9 @@
+.pixi/
+emscripten-build/
+native/
+node_modules/
+python/
+wasi-build/
+pyodide/
+test/data.tar.gz
+test/data/
